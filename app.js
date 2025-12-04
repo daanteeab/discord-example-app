@@ -10,6 +10,7 @@ import {
 } from 'discord-interactions';
 import { getRandomEmoji, DiscordRequest } from './utils.js';
 import { getShuffledOptions, getResult } from './game.js';
+import { getDailyStats, formatStatsMessage, getLiveGame, formatLiveGameMessage } from './lol.js';
 
 // Create an express app
 const app = express();
@@ -55,6 +56,116 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
             }
           ]
         },
+      });
+    }
+
+    // "demacia" command - League of Legends stats and live game
+    if (name === 'demacia') {
+      const subcommand = data.options[0].name;
+      const riotId = data.options[0].options[0].value;
+      
+      // Handle stats subcommand
+      if (subcommand === 'stats') {
+        // Fetch stats asynchronously and send response
+        (async () => {
+          try {
+            const stats = await getDailyStats(riotId);
+            const message = formatStatsMessage(stats);
+
+            // Send follow-up message with stats
+            await DiscordRequest(`webhooks/${process.env.APP_ID}/${req.body.token}`, {
+              method: 'POST',
+              body: {
+                content: message,
+              },
+            });
+          } catch (error) {
+            console.error('Error fetching League stats:', error);
+            
+            // Format detailed error message
+            let errorMessage = `❌ **Error fetching stats for "${riotId}"**\n\n`;
+            errorMessage += `**Details:** ${error.message}\n\n`;
+            
+            // Add helpful hints based on error type
+            if (error.message.includes('not found')) {
+              errorMessage += `💡 Make sure to use Riot ID format: **gameName#tagLine** (e.g., PlayerName#EUW)`;
+            } else if (error.message.includes('API Key') || error.message.includes('403') || error.message.includes('401')) {
+              errorMessage += `💡 Check your RIOT_API_KEY in the .env file. Development keys expire after 24 hours.`;
+            } else if (error.message.includes('429')) {
+              errorMessage += `💡 You've hit the rate limit. Wait a minute and try again.`;
+            } else if (error.message.includes('Network')) {
+              errorMessage += `💡 Check your internet connection or try again later.`;
+            }
+            
+            try {
+              await DiscordRequest(`webhooks/${process.env.APP_ID}/${req.body.token}`, {
+                method: 'POST',
+                body: {
+                  content: errorMessage,
+                },
+              });
+            } catch (webhookError) {
+              console.error('Failed to send error message:', webhookError);
+            }
+          }
+        })();
+      }
+      
+      // Handle live subcommand
+      if (subcommand === 'live') {
+        // Fetch live game asynchronously
+        (async () => {
+          try {
+            // Parse Riot ID
+            let gameName, tagLine;
+            if (riotId.includes('#')) {
+              [gameName, tagLine] = riotId.split('#');
+            } else {
+              gameName = riotId;
+              tagLine = 'EUW';
+            }
+
+            const gameData = await getLiveGame(gameName, tagLine);
+            const message = await formatLiveGameMessage(gameData);
+
+            // Send follow-up message with live game info
+            await DiscordRequest(`webhooks/${process.env.APP_ID}/${req.body.token}`, {
+              method: 'POST',
+              body: {
+                content: message,
+              },
+            });
+          } catch (error) {
+            console.error('Error fetching live game:', error);
+            
+            // Format error message
+            let errorMessage = `❌ **Error checking live game for "${riotId}"**\n\n`;
+            errorMessage += `**Details:** ${error.message}\n\n`;
+            
+            // Add helpful hints
+            if (error.message.includes('not currently in a game')) {
+              errorMessage += `💡 The player is not in an active game right now.`;
+            } else if (error.message.includes('not found')) {
+              errorMessage += `💡 Make sure to use Riot ID format: **gameName#tagLine**`;
+            }
+            
+            try {
+              await DiscordRequest(`webhooks/${process.env.APP_ID}/${req.body.token}`, {
+                method: 'POST',
+                body: {
+                  content: errorMessage,
+                },
+              });
+            } catch (webhookError) {
+              console.error('Failed to send error message:', webhookError);
+            }
+          }
+        })();
+      }
+
+      // Send deferred response immediately
+      return res.send({
+        type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
       });
     }
 

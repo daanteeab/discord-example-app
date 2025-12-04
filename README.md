@@ -2,6 +2,8 @@
 
 This project contains a basic rock-paper-scissors-style Discord app written in JavaScript, built for the [getting started guide](https://discord.com/developers/docs/getting-started).
 
+**Extended with League of Legends integration:** This app now includes a `/demacia` command that fetches daily ranked stats for League of Legends players on the EUW server.
+
 ![Demo of app](https://github.com/discord/discord-example-app/raw/main/assets/getting-started-demo.gif?raw=true)
 
 ## Project structure
@@ -48,6 +50,8 @@ npm install
 ### Get app credentials
 
 Fetch the credentials from your app's settings and add them to a `.env` file (see `.env.sample` for an example). You'll need your app ID (`APP_ID`), bot token (`DISCORD_TOKEN`), and public key (`PUBLIC_KEY`).
+
+**For League of Legends functionality**, you'll also need a Riot API key (`RIOT_API_KEY`). Get one from the [Riot Developer Portal](https://developer.riotgames.com/).
 
 Fetching credentials is covered in detail in the [getting started guide](https://discord.com/developers/docs/getting-started).
 
@@ -100,6 +104,28 @@ Copy the forwarding address that starts with `https`, in this case `https://1234
 On the **General Information** tab, there will be an **Interactions Endpoint URL**. Paste your ngrok address there, and append `/interactions` to it (`https://1234-someurl.ngrok.io/interactions` in the example).
 
 Click **Save Changes**, and your app should be ready to run 🚀
+
+## League of Legends Commands
+
+### `/demacia {summonername}`
+Fetches daily ranked stats for a League of Legends player on the EUW server.
+
+**Features:**
+- Shows win/loss record for Solo/Duo and Flex queues (today only)
+- Displays overall K/D/A for the day
+- Lists detailed match history with:
+  - Champion played
+  - Queue type (Solo/Duo or Flex)
+  - Win/Loss result
+  - K/D/A per game
+  - Game duration
+
+**Example:** `/demacia Faker`
+
+**Requirements:** 
+- Valid Riot API key in your `.env` file
+- Summoner must be on EUW server
+- Summoner must have played ranked games today
 
 ## Other resources
 - Read **[the documentation](https://discord.com/developers/docs/intro)** for in-depth information about API features.

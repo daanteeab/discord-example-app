@@ -44,6 +44,43 @@ const CHALLENGE_COMMAND = {
   contexts: [0, 2],
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND];
+// League of Legends stats command
+const DEMACIA_COMMAND = {
+  name: 'demacia',
+  description: 'League of Legends game statistics and info',
+  options: [
+    {
+      type: 1, // SUB_COMMAND
+      name: 'stats',
+      description: 'Get daily ranked stats (use Riot ID: gameName#tagLine)',
+      options: [
+        {
+          type: 3,
+          name: 'riotid',
+          description: 'Riot ID (e.g., PlayerName#EUW or PlayerName#1234)',
+          required: true,
+        },
+      ],
+    },
+    {
+      type: 1, // SUB_COMMAND
+      name: 'live',
+      description: 'Check if a player is currently in a game',
+      options: [
+        {
+          type: 3,
+          name: 'riotid',
+          description: 'Riot ID (e.g., PlayerName#EUW or PlayerName#1234)',
+          required: true,
+        },
+      ],
+    },
+  ],
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0, 1, 2],
+};
+
+const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, DEMACIA_COMMAND];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
